@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNS Record Checker</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        input, button {
+            background-color: #1a1a1a;
+            color: white;
+            border: none;
+            padding: 10px;
+            margin: 5px 0;
+            width: calc(100% - 22px);
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #333;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #555;
+        }
+        pre {
+            background-color: black;
+            padding: 10px;
+            overflow-x: auto;
+            max-width: calc(100% - 20px);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="p-6">
+    <div style="max-width: 800px; margin: auto; padding: 10px;">
+        <h1 class="text-2xl font-bold mb-4">DNS Record Checker</h1>
+        <div class="mb-4">
+            <label for="domain">Domain:</label>
+            <input type="text" id="domain" placeholder="e.g., google.com">
+        </div>
+        <div class="mb-4">
+            <label for="host">Host:</label>
+            <input type="text" id="host" placeholder="e.g., send">
+        </div>
+        <button onclick="checkRecords()">Check Records</button>
+        <div id="results" class="hidden">
+            <h2 id="resultsTitle" class="text-xl font-bold mt-6">Results for <span id="domainValue"></span></h2>
+            <div id="resendSection" class="hidden">
+                <h3 class="text-lg font-bold mt-4">TXT Records for resend._domainkey.<span id="domainValueResend"></span></h3>
+                <pre id="txtRecordsResend"></pre>
+            </div>
+            <div id="hostSection" class="hidden">
+                <h3 class="text-lg font-bold mt-4">TXT and MX Records for <span id="hostValue"></span>.<span id="domainValueHost"></span></h3>
+                <pre id="txtRecordsHost"></pre>
+                <pre id="mxRecords"></pre>
+            </div>
+            <div id="dmarcSection" class="hidden">
+                <h3 class="text-lg font-bold mt-4">DMARC Records for <span id="domainValueDmarc"></span></h3>
+                <pre id="dmarcRecords"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function checkRecords() {
+            const domain = document.getElementById('domain').value;
+            const host = document.getElementById('host').value || 'send';
+            const response = await fetch(`/check-dns?domain=${domain}&host=${host}`);
+            const result = await response.json();
+
+            document.getElementById('domainValue').innerText = domain;
+            document.getElementById('domainValueResend').innerText = domain;
+            document.getElementById('domainValueHost').innerText = domain;
+            document.getElementById('domainValueDmarc').innerText = domain;
+            document.getElementById('hostValue').innerText = host;
+
+            document.getElementById('results').classList.remove('hidden');
+
+            if (result.txtRecordsResend) {
+                document.getElementById('txtRecordsResend').innerText = result.txtRecordsResend;
+                document.getElementById('resendSection').classList.remove('hidden');
+            } else {
+                document.getElementById('resendSection').classList.add('hidden');
+            }
+
+            if (result.txtRecordsHost || result.mxRecords) {
+                document.getElementById('txtRecordsHost').innerText = result.txtRecordsHost;
+                document.getElementById('mxRecords').innerText = result.mxRecords;
+                document.getElementById('hostSection').classList.remove('hidden');
+            } else {
+                document.getElementById('hostSection').classList.add('hidden');
+            }
+
+            if (result.dmarcRecords) {
+                document.getElementById('dmarcRecords').innerText = result.dmarcRecords;
+                document.getElementById('dmarcSection').classList.remove('hidden');
+            } else {
+                document.getElementById('dmarcSection').classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
